@@ -24,9 +24,11 @@ Operaciones de bajo nivel:
 
 Operaciones de alto nivel (pensadas para la interfaz gráfica):
 
-* ``agregar_contacto``: valida el ID en el índice, escribe y actualiza el índice.
+* ``agregar_contacto``: valida el ID en el índice, escribe, actualiza el
+  índice y refresca el hash SHA-256.
 * ``buscar_por_id``: localiza un contacto usando primero ``indice.json``.
-* ``modificar_por_id``: localiza por ID y sobrescribe el registro in-place.
+* ``modificar_por_id``: localiza por ID, sobrescribe el registro in-place y
+  refresca el hash SHA-256.
 
 La relación entre número de registro, offset y posición es siempre::
 
@@ -45,6 +47,7 @@ from modelo_contacto import (
     empaquetar_contacto,
     validar_id,
 )
+from utilidades_sistema import guardar_hash_sha256
 
 # ---------------------------------------------------------------------------
 # Constantes
@@ -678,6 +681,9 @@ def agregar_contacto(datos: Dict[str, object]) -> Dict[str, object]:
         _deshacer_ultimo_registro(resultado["posicion_tell"])
         raise
 
+    # El contenido de contactos.dat cambió: se actualiza su hash SHA-256.
+    guardar_hash_sha256()
+
     # Datos canónicos (con el recorte real que aplicó el modelo de registro).
     contacto = desempaquetar_contacto(
         empaquetar_contacto(numero_id, nombre, telefono, correo, ciudad)
@@ -810,6 +816,10 @@ def modificar_por_id(
     fusion["id"] = numero_id
 
     actualizado = sobrescribir_registro_en_lugar(numero_registro, fusion)
+
+    # El contenido de contactos.dat cambió: se actualiza su hash SHA-256.
+    guardar_hash_sha256()
+
     actualizado["ok"] = True
     return actualizado
 
