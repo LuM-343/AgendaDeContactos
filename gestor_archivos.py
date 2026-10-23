@@ -47,7 +47,7 @@ from modelo_contacto import (
     empaquetar_contacto,
     validar_id,
 )
-from utilidades_sistema import guardar_hash_sha256
+from utilidades_sistema import ARCHIVO_HASH, guardar_hash_sha256
 
 # ---------------------------------------------------------------------------
 # Constantes
@@ -318,16 +318,20 @@ def reconstruir_indice() -> Dict[str, int]:
 def cargar_indice() -> Dict[str, int]:
     """Carga el índice primario desde ``indice.json``.
 
-    Si el archivo no existe, retorna ``{}``. Si el JSON está corrupto
-    (``json.JSONDecodeError``) o su estructura no es válida, reconstruye el
-    índice leyendo ``contactos.dat`` en bloques de ``TAMANO_REGISTRO`` y lo
-    vuelve a guardar.
+    Si el archivo no existe pero ``contactos.dat`` sí, reconstruye el índice
+    leyendo el archivo de datos para no perder de vista contactos ya
+    almacenados. Si tampoco existe ``contactos.dat``, retorna ``{}`` (agenda
+    nueva). Si el JSON está corrupto (``json.JSONDecodeError``), su estructura
+    no es válida o quedó desincronizado con la cantidad de registros del
+    archivo de datos, también reconstruye el índice y lo vuelve a guardar.
 
     Returns:
         dict: Índice ``{"id": numero_registro}`` con claves ``str`` y valores
         ``int``.
 
     Raises:
+        IndiceCorruptoError: Si el índice tiene más entradas que registros en
+            el archivo de datos, o si el archivo de datos está desalineado.
         PermissionError: Si no hay permisos de lectura/escritura.
         OSError: Ante cualquier otro error de entrada/salida.
     """
@@ -336,6 +340,10 @@ def cargar_indice() -> Dict[str, int]:
             contenido = json.load(archivo)
 
     except FileNotFoundError:
+        # Sin índice, pero con datos en disco, hay que regenerarlo: devolver
+        # {} ocultaría todos los contactos y permitiría IDs duplicados.
+        if os.path.exists(ARCHIVO_CONTACTOS):
+            return reconstruir_indice()
         return {}
     except (json.JSONDecodeError, UnicodeDecodeError):
         # Índice ilegible: se regenera desde el archivo de datos.
@@ -352,11 +360,47 @@ def cargar_indice() -> Dict[str, int]:
         ) from error
 
     try:
-        return _normalizar_indice(contenido)
+        normalizado = _normalizar_indice(contenido)
     except IndiceCorruptoError:
         # JSON válido pero con estructura incorrecta: también se regenera.
         return reconstruir_indice()
 
+    # Coherencia básica con el archivo de datos. Es una comprobación barata
+    # (solo tamaño y cantidad de entradas) que evita que un índice vacío o
+    # incompleto oculte contactos existentes.
+    if os.path.exists(ARCHIVO_CONTACTOS):
+        try:
+            tamano_archivo = os.path.getsize(ARCHIVO_CONTACTOS)
+        except OSError as error:
+            raise OSError(
+                "No se pudo consultar el tamaño de '{}': {}".format(
+                    ARCHIVO_CONTACTOS, error
+                )
+            ) from error
+
+        if tamano_archivo % TAMANO_REGISTRO != 0:
+            raise IndiceCorruptoError(
+                "El archivo '{}' está corrupto: su tamaño ({} bytes) no es "
+                "múltiplo de {}.".format(
+                    ARCHIVO_CONTACTOS, tamano_archivo, TAMANO_REGISTRO
+                )
+            )
+
+        total_registros = tamano_archivo // TAMANO_REGISTRO
+
+        if len(normalizado) < total_registros:
+            # Faltan entradas en el índice: se recuperan desde los registros.
+            return reconstruir_indice()
+
+        if len(normalizado) > total_registros:
+            raise IndiceCorruptoError(
+                "El índice está desincronizado: contiene {} entrada(s), pero "
+                "'{}' solo tiene {} registro(s).".format(
+                    len(normalizado), ARCHIVO_CONTACTOS, total_registros
+                )
+            )
+
+    return normalizado
 
 
 # ---------------------------------------------------------------------------
@@ -633,6 +677,118 @@ def _deshacer_ultimo_registro(posicion_bytes: int) -> None:
         pass
 
 
+def _advertencia_hash(estado_hash: Dict[str, object]) -> str:
+    """Mensaje para avisar que el dato se guardó pero el hash no se actualizó."""
+    return (
+        "El contacto se guardó en '{}', pero no se pudo actualizar '{}': {}"
+    ).format(
+        ARCHIVO_CONTACTOS,
+        ARCHIVO_HASH,
+        estado_hash.get("error", "error desconocido"),
+    )
+
+
+def _validar_indice_contra_datos(indice: Dict[str, int]) -> None:
+    """Comprueba que el índice no apunte fuera del archivo de contactos.
+
+    Esta validación se ejecuta antes de agregar un registro. Evita el caso
+    peligroso en el que ``indice.json`` existe pero ``contactos.dat`` fue
+    borrado o truncado: sin ella, el nuevo contacto se escribiría en el byte 0
+    y quedaría compartiendo posición con entradas antiguas del índice.
+
+    Raises:
+        FileNotFoundError: Si hay entradas en el índice y no existe el archivo.
+        ValueError: Si el archivo está desalineado o el índice apunta a un
+            registro inexistente.
+        OSError: Ante cualquier otro error al consultar el tamaño.
+    """
+    if not indice:
+        return
+
+    if not os.path.isfile(ARCHIVO_CONTACTOS):
+        raise FileNotFoundError(
+            "El índice contiene contactos, pero no existe '{}'. No se puede "
+            "agregar un registro sin arriesgar la coherencia del índice.".format(
+                ARCHIVO_CONTACTOS
+            )
+        )
+
+    try:
+        tamano_archivo = os.path.getsize(ARCHIVO_CONTACTOS)
+    except OSError as error:
+        raise OSError(
+            "No se pudo consultar el tamaño de '{}': {}".format(
+                ARCHIVO_CONTACTOS, error
+            )
+        ) from error
+
+    if tamano_archivo % TAMANO_REGISTRO != 0:
+        raise ValueError(
+            "El archivo '{}' está corrupto: su tamaño ({} bytes) no es "
+            "múltiplo de {}.".format(
+                ARCHIVO_CONTACTOS, tamano_archivo, TAMANO_REGISTRO
+            )
+        )
+
+    total_registros = tamano_archivo // TAMANO_REGISTRO
+    for id_texto, numero_registro in indice.items():
+        if numero_registro >= total_registros:
+            raise ValueError(
+                "El índice está inconsistente: el ID {} apunta al registro "
+                "{}, pero '{}' solo tiene {} registro(s).".format(
+                    id_texto,
+                    numero_registro,
+                    ARCHIVO_CONTACTOS,
+                    total_registros,
+                )
+            )
+
+    # Verificación completa antes de escribir: cada entrada debe apuntar a un
+    # registro que realmente contenga ese ID. Así se evita dejar registros
+    # huérfanos si el índice fue editado a mano con un mapeo incorrecto.
+    try:
+        with open(ARCHIVO_CONTACTOS, "rb") as archivo:
+            for id_texto, numero_registro in indice.items():
+                archivo.seek(numero_registro * TAMANO_REGISTRO)
+                bloque = archivo.read(TAMANO_REGISTRO)
+                if len(bloque) != TAMANO_REGISTRO:
+                    raise ValueError(
+                        "El registro {} del ID {} está incompleto.".format(
+                            numero_registro, id_texto
+                        )
+                    )
+                try:
+                    contacto = desempaquetar_contacto(bloque)
+                except (TypeError, ValueError) as error:
+                    raise ValueError(
+                        "El registro {} del ID {} es inválido: {}".format(
+                            numero_registro, id_texto, error
+                        )
+                    ) from error
+                if str(contacto["id"]) != id_texto:
+                    raise ValueError(
+                        "El índice está inconsistente: el ID {} apunta al "
+                        "registro {}, que contiene el ID {}.".format(
+                            id_texto,
+                            numero_registro,
+                            contacto["id"],
+                        )
+                    )
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            "No existe '{}' para validar el índice.".format(ARCHIVO_CONTACTOS)
+        ) from None
+    except PermissionError:
+        raise PermissionError(
+            "No hay permisos para leer '{}'.".format(ARCHIVO_CONTACTOS)
+        ) from None
+    except OSError as error:
+        raise OSError(
+            "Error de entrada/salida al validar el índice contra '{}': "
+            "{}".format(ARCHIVO_CONTACTOS, error)
+        ) from error
+
+
 def agregar_contacto(datos: Dict[str, object]) -> Dict[str, object]:
     """Agrega un contacto nuevo y actualiza el índice primario.
 
@@ -662,6 +818,7 @@ def agregar_contacto(datos: Dict[str, object]) -> Dict[str, object]:
     clave = str(numero_id)
 
     indice = cargar_indice()
+    _validar_indice_contra_datos(indice)
 
     if clave in indice:
         return _resultado_error(
@@ -682,19 +839,22 @@ def agregar_contacto(datos: Dict[str, object]) -> Dict[str, object]:
         raise
 
     # El contenido de contactos.dat cambió: se actualiza su hash SHA-256.
-    guardar_hash_sha256()
+    estado_hash = guardar_hash_sha256()
 
     # Datos canónicos (con el recorte real que aplicó el modelo de registro).
     contacto = desempaquetar_contacto(
         empaquetar_contacto(numero_id, nombre, telefono, correo, ciudad)
     )
 
-    return {
+    resultado_final: Dict[str, object] = {
         "ok": True,
         **contacto,
         "numero_registro": resultado["numero_registro"],
         "posicion_tell": resultado["posicion_tell"],
     }
+    if not estado_hash.get("ok"):
+        resultado_final["advertencia"] = _advertencia_hash(estado_hash)
+    return resultado_final
 
 
 def buscar_por_id(id_contacto: Union[int, str]) -> Dict[str, object]:
@@ -817,8 +977,12 @@ def modificar_por_id(
 
     actualizado = sobrescribir_registro_en_lugar(numero_registro, fusion)
 
-    # El contenido de contactos.dat cambió: se actualiza su hash SHA-256.
-    guardar_hash_sha256()
+    # El contenido de contactos.dat cambió: se actualiza su hash SHA-256
+    # inmediatamente después de la sobrescritura in-place.
+    estado_hash = guardar_hash_sha256()
+
+    if not estado_hash.get("ok"):
+        actualizado["advertencia"] = _advertencia_hash(estado_hash)
 
     actualizado["ok"] = True
     return actualizado
