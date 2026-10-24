@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-interfaz_brutalista.py
-=====================
+brutalista.py - Interfaz gráfica
 
 Interfaz gráfica de la "Agenda de Contactos con Acceso Aleatorio".
 
@@ -13,14 +12,14 @@ Estética **neo-brutalista / industrial de alto contraste**:
 * Tipografía monoespaciada en negrita (Consolas) para el aire de terminal.
 
 Esta capa es únicamente *presentación*: toda la lógica de archivos vive en
-``gestor_archivos.py``, ``utilidades_sistema.py``, ``exportador.py`` y
-``modelo_contacto.py``. La interfaz se limita a traducir sus resultados a la
-pantalla y a capturar cualquier error con ``messagebox`` para que la aplicación
-nunca se cierre de forma abrupta.
+``almacenamiento/gestor_archivos.py``, ``servicios/utilidades_sistema.py``,
+``servicios/exportador.py`` y ``modelo/contacto.py``. La interfaz se limita a
+traducir sus resultados a la pantalla y a capturar cualquier error con
+``messagebox`` para que la aplicación nunca se cierre de forma abrupta.
 
 Uso::
 
-    python interfaz_brutalista.py
+    python src/interfaz/brutalista.py
 """
 
 import os
@@ -31,17 +30,23 @@ from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import Dict, Optional
 
+# Permite ejecutar este archivo directamente (`python src/interfaz/brutalista.py`)
+# además de hacerlo a través de `python main.py`.
+SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SRC not in sys.path:
+    sys.path.insert(0, SRC)
+
 # ---------------------------------------------------------------------------
 # Importaciones de la capa de lógica
 # ---------------------------------------------------------------------------
 try:
-    from exportador import (
+    from servicios.exportador import (
         ARCHIVO_JSON_EXPORTADO,
         ARCHIVO_PDF_REPORTE,
         exportar_contactos_json,
         generar_reporte_pdf,
     )
-    from gestor_archivos import (
+    from almacenamiento.gestor_archivos import (
         ARCHIVO_CONTACTOS,
         ARCHIVO_INDICE,
         agregar_contacto,
@@ -50,8 +55,8 @@ try:
         leer_registro_aleatorio,
         modificar_por_id,
     )
-    from modelo_contacto import TAMANO_REGISTRO
-    from utilidades_sistema import (
+    from modelo.contacto import TAMANO_REGISTRO
+    from servicios.utilidades_sistema import (
         ARCHIVO_HASH,
         ARCHIVO_RESPALDO,
         crear_respaldo_zip,
@@ -1353,10 +1358,13 @@ class InterfazBrutalista(tk.Tk):
 # ---------------------------------------------------------------------------
 def main() -> int:
     """Arranca la aplicación gráfica."""
-    # Los módulos trabajan con rutas relativas: se anclan a la carpeta
-    # del proyecto para que los datos queden junto al código.
+    # Los módulos trabajan con rutas relativas: se anclan a la raíz del
+    # proyecto (dos niveles arriba de src/interfaz) para que los datos queden
+    # junto al código.
     try:
-        base = os.path.dirname(os.path.abspath(__file__))
+        base = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
         if base:
             os.chdir(base)
     except OSError:

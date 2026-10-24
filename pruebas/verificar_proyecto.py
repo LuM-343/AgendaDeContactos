@@ -17,7 +17,7 @@ Comprueba:
 
 Uso::
 
-    python verificar_proyecto.py
+    python pruebas/verificar_proyecto.py
 
 El script trabaja en carpetas temporales y no modifica los archivos reales
 del proyecto. Devuelve código de salida 0 si todo pasa y 1 si algo falla.
@@ -38,14 +38,18 @@ import zipfile
 from typing import Dict, Iterator, List, Tuple
 from unittest.mock import patch
 
-PROYECTO = os.path.dirname(os.path.abspath(__file__))
-if PROYECTO not in sys.path:
-    sys.path.insert(0, PROYECTO)
+# El script vive en pruebas/; el código está en src/ y los archivos activos en
+# la raíz del proyecto.
+PROYECTO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.join(PROYECTO, "src")
+for ruta in (PROYECTO, SRC):
+    if ruta not in sys.path:
+        sys.path.insert(0, ruta)
 
-import exportador  # noqa: E402
-import gestor_archivos as gestor  # noqa: E402
-import modelo_contacto as modelo  # noqa: E402
-import utilidades_sistema as utilidades  # noqa: E402
+from servicios import exportador  # noqa: E402
+from almacenamiento import gestor_archivos as gestor  # noqa: E402
+from modelo import contacto as modelo  # noqa: E402
+from servicios import utilidades_sistema as utilidades  # noqa: E402
 
 TAMANO = modelo.TAMANO_REGISTRO
 FALLOS: List[str] = []
@@ -916,16 +920,29 @@ def _modo_constante(nodo: ast.Call) -> Tuple[bool, str]:
 
 
 def probar_auditoria_estatica() -> None:
-    archivos_py = sorted(
-        os.path.join(PROYECTO, nombre)
-        for nombre in os.listdir(PROYECTO)
+    archivos_py = [os.path.join(PROYECTO, "main.py")]
+
+    for raiz, _directorios, nombres in os.walk(SRC):
+        archivos_py.extend(
+            os.path.join(raiz, nombre)
+            for nombre in nombres
+            if nombre.endswith(".py")
+        )
+
+    carpeta_pruebas = os.path.join(PROYECTO, "pruebas")
+    archivos_py.extend(
+        os.path.join(carpeta_pruebas, nombre)
+        for nombre in os.listdir(carpeta_pruebas)
         if nombre.endswith(".py")
     )
+
+    archivos_py = sorted(set(archivos_py))
+
     check("Se encontraron archivos .py para auditar", len(archivos_py) >= 5,
           repr(archivos_py))
 
     for ruta in archivos_py:
-        nombre = os.path.basename(ruta)
+        nombre = os.path.relpath(ruta, PROYECTO).replace(os.sep, "/")
         fuente = leer_texto(ruta)
         try:
             arbol = ast.parse(fuente, filename=nombre)
@@ -971,25 +988,28 @@ def probar_auditoria_estatica() -> None:
             "; ".join(problemas),
         )
 
-    # main.py debe importar un módulo de interfaz que exista realmente.
-    arbol_main = ast.parse(leer_texto(os.path.join(PROYECTO, "main.py")))
+    # app.py debe importar un módulo de interfaz que exista realmente.
+    arbol_main = ast.parse(leer_texto(os.path.join(SRC, "app.py")))
     modulos_interfaz = []
     for nodo in ast.walk(arbol_main):
         if isinstance(nodo, ast.ImportFrom) and nodo.module:
             if nodo.module.startswith("interfaz"):
                 modulos_interfaz.append(nodo.module)
     check(
-        "main.py importa al menos una interfaz",
+        "app.py importa al menos una interfaz",
         bool(modulos_interfaz),
         repr(modulos_interfaz),
     )
     for modulo in modulos_interfaz:
+        ruta_modulo = os.path.join(SRC, *modulo.split(".")) + ".py"
         check(
-            "main.py: el módulo {} existe".format(modulo),
-            os.path.isfile(os.path.join(PROYECTO, modulo + ".py")),
+            "app.py: el módulo {} existe".format(modulo),
+            os.path.isfile(ruta_modulo),
         )
 
-    fuente_ui = leer_texto(os.path.join(PROYECTO, "interfaz_brutalista.py"))
+    fuente_ui = leer_texto(
+        os.path.join(SRC, "interfaz", "brutalista.py")
+    )
     check(
         "La interfaz define messagebox.showerror",
         "messagebox.showerror" in fuente_ui,
@@ -1003,7 +1023,7 @@ def probar_auditoria_estatica() -> None:
 def probar_manejador_de_errores() -> None:
     """Comprueba que la interfaz muestra errores con messagebox sin abrir Tk."""
     try:
-        import interfaz_brutalista as ui
+        from interfaz import brutalista as ui
     except Exception as error:
         check("La interfaz se puede importar sin abrir la ventana", False,
               str(error))
@@ -1018,7 +1038,7 @@ def probar_manejador_de_errores() -> None:
             self.registros.append((mensaje, nivel))
 
     falso = FalsoUI()
-    with patch("interfaz_brutalista.messagebox.showerror") as mock:
+    with patch("interfaz.brutalista.messagebox.showerror") as mock:
         ui.InterfazBrutalista._mostrar_error(falso, "Título", "Mensaje")
         check(
             "_mostrar_error usa messagebox.showerror",
@@ -1033,7 +1053,7 @@ def probar_manejador_de_errores() -> None:
                 repr((argumentos, opciones)),
             )
 
-    with patch("interfaz_brutalista.messagebox.showerror") as mock:
+    with patch("interfaz.brutalista.messagebox.showerror") as mock:
         ui.InterfazBrutalista._manejar_error_no_controlado(
             falso, ValueError, ValueError("fallo simulado"), None
         )
@@ -1047,7 +1067,7 @@ def probar_arranque_de_main() -> None:
     """Simula python main.py sin abrir una ventana real."""
     try:
         import main as modulo_main
-        import interfaz_brutalista as ui
+        from interfaz import brutalista as ui
     except Exception as error:
         check("main.py se puede importar", False, str(error))
         return

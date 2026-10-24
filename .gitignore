@@ -1,3 +1,12 @@
-Laboratorio 2 Manejo de archivos Borrador.pdf
-__pycache__/modelo_contacto.cpython-314.pyc
+# Bytecode de Python
 __pycache__/
+*.py[cod]
+
+# Temporales de escritura atómica (*.tmp)
+*.tmp
+
+# Respaldo automático del estado activo: puede contener datos personales
+datos_prueba/00_actual/
+
+# PDF del enunciado (material del curso)
+docs/Laboratorio 2 Manejo de archivos Borrador.pdf

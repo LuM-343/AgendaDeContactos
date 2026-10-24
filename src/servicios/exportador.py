@@ -19,7 +19,10 @@ import os
 from datetime import datetime
 from typing import Dict, List
 
-from gestor_archivos import cargar_indice, leer_registro_aleatorio
+from almacenamiento.gestor_archivos import (
+    cargar_indice,
+    leer_registro_aleatorio,
+)
 
 try:  # fpdf2 puede no estar instalado; se informa de forma controlada.
     from fpdf import FPDF

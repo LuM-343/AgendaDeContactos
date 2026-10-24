@@ -20,7 +20,7 @@ import zipfile
 from datetime import datetime
 from typing import Dict
 
-from modelo_contacto import TAMANO_REGISTRO
+from modelo.contacto import TAMANO_REGISTRO
 
 # ---------------------------------------------------------------------------
 # Constantes

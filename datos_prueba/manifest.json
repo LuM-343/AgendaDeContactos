@@ -1,0 +1,364 @@
+{
+  "proyecto": "Agenda de Contactos con Acceso Aleatorio",
+  "tamano_registro": 110,
+  "campos": {
+    "id": 10,
+    "nombre": 30,
+    "telefono": 15,
+    "correo": 35,
+    "ciudad": 20
+  },
+  "escenarios": [
+    {
+      "carpeta": "01_agenda_normal",
+      "titulo": "Agenda normal (12 contactos)",
+      "descripcion": "IDs no consecutivos y en orden físico desordenado; nombres con tildes y eñe; incluye el ID máximo de 10 dígitos.",
+      "resultado_esperado": "Carga 12 contactos ordenados por ID; permite buscar y modificar cualquier registro con seek()/tell().",
+      "estado": "valido",
+      "registros": 12,
+      "ids_en_orden_de_registro": [
+        7,
+        1,
+        25,
+        3,
+        12,
+        99,
+        42,
+        8,
+        100,
+        2147483647,
+        15,
+        60
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 12,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": "Escenario recomendado para la demostración principal."
+    },
+    {
+      "carpeta": "02_limites_utf8",
+      "titulo": "Límites de campo y UTF-8",
+      "descripcion": "El primer registro ocupa exactamente 10/30/15/35/20 bytes en cada campo; hay tildes, eñe inicial y caracteres multibyte.",
+      "resultado_esperado": "Carga 4 contactos sin recortes; la exportación JSON y el PDF conservan tildes y eñe.",
+      "estado": "valido",
+      "registros": 4,
+      "ids_en_orden_de_registro": [
+        9999999999,
+        555,
+        2,
+        1000000000
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 4,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": "Útil para comprobar que el corte es por bytes, no por caracteres."
+    },
+    {
+      "carpeta": "03_un_registro",
+      "titulo": "Un solo registro",
+      "descripcion": "Agenda con un único contacto en el offset 0.",
+      "resultado_esperado": "Carga 1 contacto; al modificarlo, el archivo conserva 110 bytes.",
+      "estado": "valido",
+      "registros": 1,
+      "ids_en_orden_de_registro": [
+        42
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 1,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": "Caso mínimo del acceso aleatorio."
+    },
+    {
+      "carpeta": "04_agenda_vacia",
+      "titulo": "Agenda vacía (0 registros)",
+      "descripcion": "contactos.dat existe pero mide 0 bytes; el índice es {} y el hash corresponde al archivo vacío.",
+      "resultado_esperado": "Carga sin contactos ni errores; permite agregar el primero.",
+      "estado": "vacio",
+      "registros": 0,
+      "ids_en_orden_de_registro": [],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 0,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": ""
+    },
+    {
+      "carpeta": "05_hash_alterado",
+      "titulo": "Hash alterado",
+      "descripcion": "Los datos y el índice son válidos, pero contactos.sha256 no coincide con el contenido real.",
+      "resultado_esperado": "Al iniciar aparece ALERTA DE INTEGRIDAD; los contactos siguen siendo legibles.",
+      "estado": "alerta",
+      "registros": 12,
+      "ids_en_orden_de_registro": [
+        7,
+        1,
+        25,
+        3,
+        12,
+        99,
+        42,
+        8,
+        100,
+        2147483647,
+        15,
+        60
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 12,
+        "registros_con_error": 0,
+        "hash_integro": false,
+        "indice_reparado": false
+      },
+      "notas": "Escenario para la captura de integridad del informe."
+    },
+    {
+      "carpeta": "06_archivo_truncado",
+      "titulo": "Archivo truncado",
+      "descripcion": "contactos.dat mide 367 bytes (3 registros y 37 bytes extra), por lo que su tamaño no es múltiplo de 110.",
+      "resultado_esperado": "Error controlado al cargar el índice: la aplicación avisa y no se cierra.",
+      "estado": "error_controlado",
+      "registros": 3,
+      "ids_en_orden_de_registro": [
+        7,
+        1,
+        25
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "error",
+        "excepcion": "IndiceCorruptoError",
+        "registros_leibles": 0,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": "El hash coincide: el fallo se detecta por el tamaño del registro."
+    },
+    {
+      "carpeta": "07_indice_corrupto",
+      "titulo": "Índice corrupto (JSON inválido)",
+      "descripcion": "contactos.dat es válido, pero indice.json está truncado y no se puede interpretar.",
+      "resultado_esperado": "El índice se reconstruye desde contactos.dat (12 entradas) y se vuelve a escribir.",
+      "estado": "recuperable",
+      "registros": 12,
+      "ids_en_orden_de_registro": [
+        7,
+        1,
+        25,
+        3,
+        12,
+        99,
+        42,
+        8,
+        100,
+        2147483647,
+        15,
+        60
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 12,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": true
+      },
+      "notas": ""
+    },
+    {
+      "carpeta": "08_indice_ausente",
+      "titulo": "Índice ausente",
+      "descripcion": "Existe contactos.dat con 12 registros y su hash, pero no existe indice.json.",
+      "resultado_esperado": "El índice se reconstruye automáticamente y se guarda con las 12 entradas.",
+      "estado": "recuperable",
+      "registros": 12,
+      "ids_en_orden_de_registro": [
+        7,
+        1,
+        25,
+        3,
+        12,
+        99,
+        42,
+        8,
+        100,
+        2147483647,
+        15,
+        60
+      ],
+      "archivos": [
+        "contactos.dat",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 12,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": true
+      },
+      "notas": ""
+    },
+    {
+      "carpeta": "09_datos_ausentes_con_indice",
+      "titulo": "Datos ausentes con índice",
+      "descripcion": "Solo existe indice.json con dos IDs; contactos.dat y el hash no están.",
+      "resultado_esperado": "La aplicación abre y muestra ERROR DE LECTURA por cada ID, sin cerrarse.",
+      "estado": "error_controlado",
+      "registros": 2,
+      "ids_en_orden_de_registro": [
+        7,
+        1
+      ],
+      "archivos": [
+        "indice.json"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 0,
+        "registros_con_error": 2,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": "Sirve para probar el manejo de FileNotFoundError en la tabla."
+    },
+    {
+      "carpeta": "10_sin_archivos",
+      "titulo": "Carpeta sin archivos",
+      "descripcion": "No existe ninguno de los tres archivos de la agenda (solo se conserva .gitkeep para versionar la carpeta).",
+      "resultado_esperado": "Agenda nueva vacía; no se muestran alertas.",
+      "estado": "vacio",
+      "registros": 0,
+      "ids_en_orden_de_registro": [],
+      "archivos": [],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 0,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": ""
+    },
+    {
+      "carpeta": "11_indice_incompleto",
+      "titulo": "Índice incompleto",
+      "descripcion": "contactos.dat tiene 12 registros, pero indice.json solo contiene las primeras 5 entradas.",
+      "resultado_esperado": "La aplicación detecta que faltan entradas y reconstruye el índice completo.",
+      "estado": "recuperable",
+      "registros": 12,
+      "ids_en_orden_de_registro": [
+        7,
+        1,
+        25,
+        3,
+        12,
+        99,
+        42,
+        8,
+        100,
+        2147483647,
+        15,
+        60
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 12,
+        "registros_con_error": 0,
+        "hash_integro": true,
+        "indice_reparado": true
+      },
+      "notas": ""
+    },
+    {
+      "carpeta": "12_registro_invalido",
+      "titulo": "Registro con ID inválido",
+      "descripcion": "El primer registro tiene espacios en el campo ID y no se puede desempaquetar; el segundo registro es válido.",
+      "resultado_esperado": "El ID 7 produce un error controlado al leerse; el ID 5 sigue visible y la aplicación no se cierra.",
+      "estado": "error_controlado",
+      "registros": 2,
+      "ids_en_orden_de_registro": [
+        "(inválido)",
+        5
+      ],
+      "archivos": [
+        "contactos.dat",
+        "indice.json",
+        "contactos.sha256"
+      ],
+      "esperado": {
+        "cargar_indice": "ok",
+        "excepcion": null,
+        "registros_leibles": 1,
+        "registros_con_error": 1,
+        "hash_integro": true,
+        "indice_reparado": false
+      },
+      "notas": "Verifica que un registro corrupto no invalide toda la agenda."
+    }
+  ]
+}

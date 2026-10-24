@@ -41,13 +41,13 @@ import json
 import os
 from typing import Dict, Tuple, Union
 
-from modelo_contacto import (
+from modelo.contacto import (
     TAMANO_REGISTRO,
     desempaquetar_contacto,
     empaquetar_contacto,
     validar_id,
 )
-from utilidades_sistema import ARCHIVO_HASH, guardar_hash_sha256
+from servicios.utilidades_sistema import ARCHIVO_HASH, guardar_hash_sha256
 
 # ---------------------------------------------------------------------------
 # Constantes

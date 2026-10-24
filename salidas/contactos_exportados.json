@@ -1,0 +1,86 @@
+[
+    {
+        "id": 1,
+        "nombre": "Carlos Enrique Pérez",
+        "telefono": "5555-0102",
+        "correo": "carlos.perez@correo.com",
+        "ciudad": "Guatemala"
+    },
+    {
+        "id": 3,
+        "nombre": "José Núñez",
+        "telefono": "8888-1234",
+        "correo": "jose.nunez@correo.com",
+        "ciudad": "San José"
+    },
+    {
+        "id": 7,
+        "nombre": "Ana Lucía Morales",
+        "telefono": "5555-0101",
+        "correo": "ana.morales@correo.com",
+        "ciudad": "Quetzaltenango"
+    },
+    {
+        "id": 8,
+        "nombre": "Miguel Ángel Tzul",
+        "telefono": "5555-0107",
+        "correo": "miguel.tzul@correo.com",
+        "ciudad": "Puerto Barrios"
+    },
+    {
+        "id": 12,
+        "nombre": "Lucía Fernández",
+        "telefono": "5555-0104",
+        "correo": "lucia.fernandez@correo.com",
+        "ciudad": "Antigua Guatemala"
+    },
+    {
+        "id": 15,
+        "nombre": "Andrea Michelle Recinos",
+        "telefono": "5555-0110",
+        "correo": "andrea.recinos@correo.com",
+        "ciudad": "Sololá"
+    },
+    {
+        "id": 25,
+        "nombre": "María José Hernández",
+        "telefono": "5555-0103",
+        "correo": "maria.hernandez@correo.com",
+        "ciudad": "Cobán"
+    },
+    {
+        "id": 42,
+        "nombre": "Rosa Elena Chávez",
+        "telefono": "5555-0106",
+        "correo": "rosa.chavez@correo.com",
+        "ciudad": "Mazatenango"
+    },
+    {
+        "id": 60,
+        "nombre": "Luis Fernando Ajú",
+        "telefono": "5555-0111",
+        "correo": "luis.aju@correo.com",
+        "ciudad": "Zacapa"
+    },
+    {
+        "id": 99,
+        "nombre": "Pedro Ixcoy",
+        "telefono": "5555-0105",
+        "correo": "pedro.ixcoy@correo.com",
+        "ciudad": "Huehuetenango"
+    },
+    {
+        "id": 100,
+        "nombre": "Sofía de León",
+        "telefono": "5555-0108",
+        "correo": "sofia.deleon@correo.com",
+        "ciudad": "Chimaltenango"
+    },
+    {
+        "id": 2147483647,
+        "nombre": "Juan Pablo García",
+        "telefono": "5555-0109",
+        "correo": "juan.garcia@correo.com",
+        "ciudad": "Escuintla"
+    }
+]
