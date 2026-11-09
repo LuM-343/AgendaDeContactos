@@ -10,9 +10,8 @@ Genera los artefactos de entrega a partir de los datos activos de la raíz:
 * Respaldo ZIP con ``contactos.dat`` e ``indice.json``.
 
 Los archivos se escriben en ``salidas/`` para no mezclarlos con el código ni
-con los datos de prueba. La aplicación gráfica sigue generándolos en la raíz
-cuando se usan sus opciones de menú; este script sirve para preparar la
-entrega de forma reproducible.
+con los datos de prueba. Tanto la aplicación gráfica como este script guardan
+las salidas en dicha carpeta para mantener la raíz limpia y ordenada.
 
 Uso::
 
@@ -36,10 +35,10 @@ for ruta in (BASE, SRC):
 from servicios import exportador  # noqa: E402
 from servicios import utilidades_sistema  # noqa: E402
 
-SALIDAS = os.path.join(BASE, "salidas")
-ARCHIVO_JSON = os.path.join(SALIDAS, "contactos_exportados.json")
-ARCHIVO_PDF = os.path.join(SALIDAS, "reporte_contactos.pdf")
-ARCHIVO_ZIP = os.path.join(SALIDAS, "respaldo_agenda.zip")
+SALIDAS = os.path.join(BASE, exportador.CARPETA_SALIDAS)
+ARCHIVO_JSON = os.path.join(BASE, exportador.ARCHIVO_JSON_EXPORTADO)
+ARCHIVO_PDF = os.path.join(BASE, exportador.ARCHIVO_PDF_REPORTE)
+ARCHIVO_ZIP = os.path.join(BASE, utilidades_sistema.ARCHIVO_RESPALDO)
 
 
 def _imprimir_resultado(nombre: str, resultado: dict) -> bool:

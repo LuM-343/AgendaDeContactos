@@ -1969,11 +1969,12 @@ python -c "import utilidades_sistema as u; print(u.guardar_hash_sha256())"
 | `ARCHIVO_CONTACTOS` | `"contactos.dat"` | `gestor_archivos.py` | Archivo de datos |
 | `ARCHIVO_INDICE` | `"indice.json"` | `gestor_archivos.py` | Índice primario |
 | `ARCHIVO_HASH` | `"contactos.sha256"` | `utilidades_sistema.py` | Hash de referencia |
-| `ARCHIVO_RESPALDO` | `"respaldo_agenda.zip"` | `utilidades_sistema.py` | Respaldo comprimido |
+| `CARPETA_SALIDAS` | `"salidas"` | `exportador.py`, `utilidades_sistema.py` | Carpeta de artefactos generados |
+| `ARCHIVO_RESPALDO` | `"salidas/respaldo_agenda.zip"` | `utilidades_sistema.py` | Respaldo comprimido |
 | `BLOQUE_LECTURA` | `64 * 1024` | `utilidades_sistema.py` | Bloque de lectura para el hash (64 KiB) |
 | `MENSAJE_ALERTA` | `"ALERTA: El archivo contactos.dat fue modificado fuera de la aplicación."` | `utilidades_sistema.py` | Mensaje de alerta |
-| `ARCHIVO_JSON_EXPORTADO` | `"contactos_exportados.json"` | `exportador.py` | JSON de exportación |
-| `ARCHIVO_PDF_REPORTE` | `"reporte_contactos.pdf"` | `exportador.py` | Reporte PDF |
+| `ARCHIVO_JSON_EXPORTADO` | `"salidas/contactos_exportados.json"` | `exportador.py` | JSON de exportación |
+| `ARCHIVO_PDF_REPORTE` | `"salidas/reporte_contactos.pdf"` | `exportador.py` | Reporte PDF |
 
 ## Apéndice B. Comandos útiles (chuleta)
 

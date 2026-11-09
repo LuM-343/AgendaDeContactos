@@ -38,8 +38,8 @@ interfaz.
 | `salidas/` | JSON exportado, reporte PDF y respaldo ZIP de entrega. |
 | `docs/` | Enunciado del laboratorio e informe técnico. |
 
-La explicación completa y las reglas de organización están en
-[`ORGANIZACION.md`](ORGANIZACION.md).
+La explicación completa y el diseño técnico están en
+[`docs/INFORME_TECNICO.md`](docs/INFORME_TECNICO.md).
 
 ## Datos de prueba
 

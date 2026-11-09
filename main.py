@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-main.py - Lanzador de la Agenda de Contactos
-
-El código de la aplicación vive en ``src/``:
 
 * ``src/app.py``                  -> arranque y manejo global de errores.
 * ``src/modelo/``                 -> formato del registro.
@@ -10,9 +7,6 @@ El código de la aplicación vive en ``src/``:
 * ``src/servicios/``              -> exportación, integridad y respaldo.
 * ``src/interfaz/``               -> interfaz Tkinter.
 
-Este archivo se conserva en la raíz para que el comando habitual siga siendo::
-
-    python main.py
 """
 
 import os

@@ -33,8 +33,9 @@ except ImportError:  # pragma: no cover
 # ---------------------------------------------------------------------------
 # Constantes
 # ---------------------------------------------------------------------------
-ARCHIVO_JSON_EXPORTADO = "contactos_exportados.json"
-ARCHIVO_PDF_REPORTE = "reporte_contactos.pdf"
+CARPETA_SALIDAS = "salidas"
+ARCHIVO_JSON_EXPORTADO = os.path.join(CARPETA_SALIDAS, "contactos_exportados.json")
+ARCHIVO_PDF_REPORTE = os.path.join(CARPETA_SALIDAS, "reporte_contactos.pdf")
 
 CAMPOS_CONTACTO = ("id", "nombre", "telefono", "correo", "ciudad")
 
@@ -49,8 +50,13 @@ MARGEN_CELDA = 1.0
 TAMANO_FUENTE_TABLA = 8
 
 __all__ = [
+    "CARPETA_SALIDAS",
     "ARCHIVO_JSON_EXPORTADO",
     "ARCHIVO_PDF_REPORTE",
+    "CAMPOS_CONTACTO",
+    "TITULO_REPORTE",
+    "ENCABEZADOS_TABLA",
+    "ANCHOS_COLUMNAS",
     "exportar_contactos_json",
     "generar_reporte_pdf",
 ]
@@ -271,6 +277,10 @@ def exportar_contactos_json(
 
             contactos.append(contacto)
 
+        directorio = os.path.dirname(ruta_json)
+        if directorio:
+            os.makedirs(directorio, exist_ok=True)
+
         with open(
             ruta_temporal, "w", encoding="utf-8", newline="\n"
         ) as archivo:
@@ -434,6 +444,10 @@ def generar_reporte_pdf(
                         ruta_pdf,
                     )
                 _dibujar_fila(pdf, contacto, numero_fila)
+
+        directorio_pdf = os.path.dirname(ruta_pdf)
+        if directorio_pdf:
+            os.makedirs(directorio_pdf, exist_ok=True)
 
         pdf.output(ruta_pdf)
 

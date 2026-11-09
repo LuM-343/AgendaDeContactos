@@ -28,7 +28,8 @@ from modelo.contacto import TAMANO_REGISTRO
 ARCHIVO_CONTACTOS = "contactos.dat"
 ARCHIVO_INDICE = "indice.json"
 ARCHIVO_HASH = "contactos.sha256"
-ARCHIVO_RESPALDO = "respaldo_agenda.zip"
+CARPETA_SALIDAS = "salidas"
+ARCHIVO_RESPALDO = os.path.join(CARPETA_SALIDAS, "respaldo_agenda.zip")
 
 BLOQUE_LECTURA = 64 * 1024  # 64 KiB por lectura al calcular el hash
 
@@ -40,6 +41,7 @@ __all__ = [
     "ARCHIVO_CONTACTOS",
     "ARCHIVO_INDICE",
     "ARCHIVO_HASH",
+    "CARPETA_SALIDAS",
     "ARCHIVO_RESPALDO",
     "guardar_hash_sha256",
     "verificar_integridad_sha256",
@@ -320,6 +322,10 @@ def crear_respaldo_zip(
         tamano_original = sum(
             os.path.getsize(ruta) for ruta in archivos
         )
+
+        directorio_zip = os.path.dirname(ruta_zip)
+        if directorio_zip:
+            os.makedirs(directorio_zip, exist_ok=True)
 
         with zipfile.ZipFile(
             ruta_temporal,
